@@ -1,43 +1,76 @@
 #!/usr/bin/python3
-"""Type module of BaseModel"""
-
-import models
-from uuid import uuid4
 from datetime import datetime
+from uuid import uuid4
+import models
+
+"""
+Module of the BaseModel
+Parent of all the classes
+"""
 
 
-class BaseModel:
-    """Type class of BaseModel"""
+class BaseModel():
+    """Base class for  the Airbnb clone assignment
+    Methods:
+        __init__(self, *args, **kwargs)
+        __str__(self)
+        __save(self)
+        __repr__(self)
+        to_dict(self)
+    """
 
     def __init__(self, *args, **kwargs):
-        """Type method initialize"""
-        timeformat = "%Y-%m-%dT%H:%M:%S.%f"
-        if len(kwargs) != 0:
-            for key, val in kwargs.items():
-                if key == "created_at" or key == "updated_at":
-                    setattr(self, key, datetime.strptime(val, timeformat))
-                elif key != '__class__':
-                    setattr(self, key, val)
+        """
+        Initialize attributes: random uuid(adress), dates created/updated
+        """
+        if kwargs:
+            for keys, val in kwargs.items():
+                if "created_at" == keys:
+                    self.created_at = datetime.strptime(kwargs["created_at"],
+                                                        "%Y-%m-%dT%H:%M:%S.%f")
+                elif "updated_at" == keys:
+                    self.updated_at = datetime.strptime(kwargs["updated_at"],
+                                                        "%Y-%m-%dT%H:%M:%S.%f")
+                elif "__class__" == keys:
+                    pass
+                else:
+                    setattr(self, keys, val)
         else:
             self.id = str(uuid4())
-            self.created_at = datetime.today()
-            self.updated_at = datetime.today()
+            self.created_at = datetime.now()
+            self.updated_at = datetime.now()
             models.storage.new(self)
 
+    def __str__(self):
+        """
+        Return the string of information about model
+        """
+        return ('[{}] ({}) {}'.
+                format(self.__class__.__name__, self.id, self.__dict__))
+
+    def __repr__(self):
+        """
+        returns the string of the representation
+        """
+        return (self.__str__())
+
     def save(self):
-        """Type method save"""
-        self.updated_at = datetime.today()
+        """
+        Update instance with updated time & save to the serialized file
+        """
+        self.updated_at = datetime.now()
         models.storage.save()
 
     def to_dict(self):
-        """Type method to_dict"""
-        rt_dict = self.__dict__.copy()
-        rt_dict["created_at"] = self.created_at.isoformat()
-        rt_dict["updated_at"] = self.updated_at.isoformat()
-        rt_dict["__class__"] = self.__class__.__name__
-        return rt_dict
+        """
+        Return dic with string formats of times; add class info to dic
+        """
+        dic = {}
+        dic["__class__"] = self.__class__.__name__
+        for f, v in self.__dict__.items():
+            if isinstance(v, (datetime, )):
+                dic[f] = v.isoformat()
+            else:
+                dic[f] = v
+        return dic
 
-    def __str__(self):
-        """Type method __str__"""
-        class_name = self.__class__.__name__
-        return "[{}] ({}) {}".format(class_name, self.id, self.__dict__)
